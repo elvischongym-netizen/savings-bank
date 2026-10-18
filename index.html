@@ -1,0 +1,1064 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sunday Savings Bank</title>
+<meta name="description" content="A kid's savings bank with Sunday interest, a savings goal and a passbook.">
+<meta name="theme-color" content="#EDF5F1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1D19" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Savings Bank">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Lexend:wght@400;500;600&display=swap">
+<script src="config.js"></script>
+<style>
+/* Layout: a kid's bank counter. Balance + Interest Day ticket on top, big coin buttons, goal and "what if" chart side by side, passbook below. */
+:root {
+  --bg:#EDF5F1; --surface:#FFFFFF; --sunk:#E2EEE8; --line:#D0E2D9;
+  --ink:#163A32; --ink-2:#4A6A61; --muted:#6F8A82;
+  --jade:#0D8466; --jade-ink:#FFFFFF; --jade-soft:#D3EEE4;
+  --gold:#E3A229; --gold-soft:#FBECC8; --gold-ink:#6E4B00;
+  --berry:#C43D61; --berry-soft:#F8DEE6;
+  --silver-a:#F1F4F3; --silver-b:#B9C5C1; --gold-a:#FFE9A8; --gold-b:#D99A1E; --coin-ink:#3A3020;
+  --note2:#7457B3; --note5:#2E8A4C; --note10:#C4483C; --note-ink:#FFFFFF;
+  --scrim: rgba(8,24,20,.45);
+  --shadow:0 1px 0 rgba(22,58,50,.06), 0 8px 24px -12px rgba(22,58,50,.25);
+  --f-display:"Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+  --f-body:"Lexend", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --r-lg:22px; --r-md:14px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#0E1D19; --surface:#162A25; --sunk:#11231F; --line:#264039;
+  --ink:#E4F1EB; --ink-2:#A6C1B8; --muted:#86A097;
+  --jade:#38C49D; --jade-ink:#062219; --jade-soft:#173F34;
+  --gold:#F0BC4C; --gold-soft:#3A2F15; --gold-ink:#F6D88E;
+  --berry:#EF7B98; --berry-soft:#3E1F2A;
+  --scrim: rgba(0,0,0,.6);
+  --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 28px -14px rgba(0,0,0,.7);
+  color-scheme: dark;
+}}
+:root[data-theme="dark"] {
+  --bg:#0E1D19; --surface:#162A25; --sunk:#11231F; --line:#264039;
+  --ink:#E4F1EB; --ink-2:#A6C1B8; --muted:#86A097;
+  --jade:#38C49D; --jade-ink:#062219; --jade-soft:#173F34;
+  --gold:#F0BC4C; --gold-soft:#3A2F15; --gold-ink:#F6D88E;
+  --berry:#EF7B98; --berry-soft:#3E1F2A;
+  --scrim: rgba(0,0,0,.6);
+  --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 28px -14px rgba(0,0,0,.7);
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html, body { background: var(--bg); color: var(--ink); margin: 0; }
+body {
+  font-family: var(--f-body); font-size: 16px; line-height: 1.5;
+  padding: env(safe-area-inset-top, 0px) max(16px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(16px, env(safe-area-inset-left, 0px));
+  -webkit-tap-highlight-color: transparent; overflow-x: hidden;
+}
+img { max-width: 100%; }
+.app { max-width: 1080px; margin: 0 auto; padding-block: 18px 48px; display: flex; flex-direction: column; gap: 18px; }
+h1, h2, h3 { font-family: var(--f-display); line-height: 1.1; margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+p { margin: 0; }
+a { color: var(--jade); }
+button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
+input { font: inherit; }
+button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid var(--jade); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+
+.banner { background: var(--gold-soft); color: var(--gold-ink); border-radius: var(--r-md); padding: 10px 14px; font-size: 14px; }
+.top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.eyebrow { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); font-weight: 500; }
+.top h1 { font-size: clamp(30px, 7vw, 44px); font-weight: 800; overflow-wrap: anywhere; }
+.sync { font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+.sync i { width: 8px; height: 8px; border-radius: 50%; background: var(--jade); display: inline-block; }
+.sync.off i { background: var(--berry); }
+.sync.wait i { background: var(--gold); }
+.ghost { background: transparent; border: 1.5px solid var(--line); border-radius: 999px; padding: 8px 14px; font-size: 14px; color: var(--ink-2); }
+.ghost:hover { border-color: var(--ink-2); }
+.ghost:disabled { opacity: .5; cursor: not-allowed; }
+
+.card { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 20px; min-width: 0; }
+.card h2 { font-size: 24px; font-weight: 700; }
+.card .lede { color: var(--ink-2); font-size: 14px; }
+
+/* Hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px 24px; align-items: center; }
+.hero .label { font-size: 15px; color: var(--ink-2); font-weight: 500; }
+.big { font-family: var(--f-display); font-weight: 800; font-size: clamp(52px, 13vw, 92px); line-height: .95; color: var(--jade); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.hero .sub { color: var(--ink-2); font-size: 14px; margin-top: 6px; }
+.ticket {
+  --notch: radial-gradient(circle at 0 50%, transparent 11px, #000 12px) left / 51% 100% no-repeat,
+           radial-gradient(circle at 100% 50%, transparent 11px, #000 12px) right / 51% 100% no-repeat;
+  -webkit-mask: var(--notch); mask: var(--notch);
+  background: var(--gold-soft); color: var(--gold-ink); border-radius: 16px;
+  padding: 14px 30px; text-align: center; min-width: 210px;
+}
+.t-label { font-size: 12px; text-transform: uppercase; letter-spacing: .12em; font-weight: 600; }
+.t-date { font-family: var(--f-display); font-weight: 700; font-size: 22px; line-height: 1.15; }
+.t-sleeps { font-size: 14px; border-bottom: 2px dashed currentColor; padding-bottom: 8px; margin-bottom: 6px; opacity: .9; }
+.t-amt { font-family: var(--f-display); font-weight: 800; font-size: 38px; line-height: 1; font-variant-numeric: tabular-nums; }
+.t-note { font-size: 13px; }
+.actions { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.btn { border: 0; border-radius: 18px; font-family: var(--f-display); font-weight: 700; font-size: 22px; min-height: 64px; padding: 8px 16px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; transition: transform .12s ease; text-align: center; }
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.btn .sym { font-size: 30px; line-height: 1; }
+.btn.sm { font-size: 18px; min-height: 52px; }
+.jade { background: var(--jade); color: var(--jade-ink); }
+.berry-o { background: var(--berry-soft); color: var(--berry); }
+.soft { background: var(--sunk); color: var(--ink); }
+.tip { grid-column: 1 / -1; background: var(--sunk); border-radius: var(--r-md); padding: 10px 14px; font-size: 14px; color: var(--ink-2); }
+
+/* Grid */
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr); gap: 18px; align-items: start; }
+
+/* Goal */
+.goal { display: flex; flex-direction: column; gap: 14px; }
+.goal-head { display: flex; gap: 14px; align-items: center; }
+.goal-icon { font-size: 44px; width: 72px; height: 72px; border-radius: 20px; background: var(--gold-soft); display: grid; place-items: center; flex: none; }
+.goal-name { font-family: var(--f-display); font-weight: 700; font-size: 26px; line-height: 1.1; overflow-wrap: anywhere; }
+.goal-kicker { font-size: 13px; color: var(--ink-2); text-transform: uppercase; letter-spacing: .08em; }
+.jar { height: 30px; border-radius: 999px; background: var(--sunk); position: relative; overflow: hidden; }
+.jar-fill { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 999px;
+  background: repeating-linear-gradient(90deg, var(--gold) 0 22px, var(--gold-b) 22px 24px); transition: width .8s cubic-bezier(.2,.8,.2,1); }
+.goal-nums { display: flex; justify-content: space-between; gap: 8px; font-size: 15px; flex-wrap: wrap; }
+.goal-nums strong { font-family: var(--f-display); font-size: 20px; }
+.goal-when { background: var(--jade-soft); color: var(--ink); border-radius: var(--r-md); padding: 10px 14px; font-size: 15px; }
+.goal-empty { text-align: center; display: flex; flex-direction: column; gap: 12px; align-items: center; padding-block: 10px; }
+
+/* Chart */
+.chartcard { display: flex; flex-direction: column; gap: 14px; }
+.whatif { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.stepper { display: inline-flex; align-items: center; gap: 6px; background: var(--sunk); border-radius: 999px; padding: 4px; }
+.stepper button { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--surface); font-family: var(--f-display); font-size: 26px; font-weight: 700; line-height: 1; box-shadow: var(--shadow); }
+.stepper output { min-width: 74px; text-align: center; font-family: var(--f-display); font-weight: 800; font-size: 26px; font-variant-numeric: tabular-nums; }
+.chips { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.chip { border: 1.5px solid var(--line); background: transparent; border-radius: 999px; padding: 6px 12px; font-size: 14px; color: var(--ink-2); }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw-line { width: 22px; height: 0; border-top: 3px solid var(--jade); border-radius: 2px; }
+.sw-dash { width: 22px; height: 0; border-top: 3px dashed var(--jade); }
+.sw-coins { width: 22px; height: 0; border-top: 2px solid var(--ink-2); }
+.sw-area { width: 16px; height: 12px; background: var(--gold-soft); border: 1px solid var(--gold); border-radius: 3px; }
+.chart-wrap { position: relative; width: 100%; touch-action: pan-y; }
+.chart-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+.grid-line { stroke: var(--line); stroke-width: 1; }
+.axis-text { fill: var(--muted); font-size: 11px; font-family: var(--f-body); }
+.l-total { fill: none; stroke: var(--jade); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.l-proj { fill: none; stroke: var(--jade); stroke-width: 3; stroke-dasharray: 2 7; stroke-linecap: round; }
+.l-coins { fill: none; stroke: var(--ink-2); stroke-width: 1.75; stroke-linejoin: round; }
+.a-int { fill: var(--gold-soft); stroke: none; }
+.l-goal { stroke: var(--gold-ink); stroke-width: 1.5; stroke-dasharray: 6 5; }
+.goal-tag { fill: var(--gold-soft); }
+.goal-tag-text { fill: var(--gold-ink); font-size: 12px; font-weight: 600; font-family: var(--f-body); }
+.today-line { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 3; }
+.today-text { fill: var(--ink-2); font-size: 11px; font-weight: 600; font-family: var(--f-body); }
+.dot { fill: var(--jade); stroke: var(--surface); stroke-width: 3; }
+.dot-goal { fill: var(--gold); stroke: var(--surface); stroke-width: 3; }
+.end-text { fill: var(--ink); font-size: 13px; font-weight: 700; font-family: var(--f-body); }
+.hover-line { stroke: var(--ink-2); stroke-width: 1; }
+.tooltip { position: absolute; top: 0; pointer-events: none; background: var(--ink); color: var(--surface); border-radius: 12px; padding: 8px 12px; font-size: 13px; line-height: 1.4; white-space: nowrap; box-shadow: var(--shadow); transform: translateX(-50%); }
+.tooltip b { font-family: var(--f-display); font-size: 18px; }
+.chart-sum { font-size: 15px; }
+.chart-sum strong { font-family: var(--f-display); font-size: 19px; }
+
+/* Passbook */
+.passbook { display: flex; flex-direction: column; gap: 12px; }
+.pb-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.pb-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; font-variant-numeric: tabular-nums; }
+th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 500; padding: 6px 8px; border-bottom: 2px solid var(--line); }
+td { padding: 10px 8px; border-bottom: 1px dashed var(--line); white-space: nowrap; }
+th.r, td.r { text-align: right; }
+.what { display: inline-flex; align-items: center; gap: 8px; }
+.stamp { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--gold-ink); background: var(--gold-soft); border: 1.5px solid var(--gold); border-radius: 6px; padding: 1px 6px; transform: rotate(-3deg); }
+.plus { color: var(--jade); font-weight: 600; }
+.minus { color: var(--berry); font-weight: 600; }
+.empty { text-align: center; color: var(--ink-2); padding: 24px 8px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.empty strong { font-family: var(--f-display); font-size: 22px; color: var(--ink); }
+
+/* Setup */
+.setup { max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.setup ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; color: var(--ink-2); font-size: 15px; }
+
+/* Sheets */
+.sheet-wrap { position: fixed; inset: 0; background: var(--scrim); display: grid; place-items: end center; z-index: 20; }
+.sheet { background: var(--surface); color: var(--ink); width: min(620px, 100%); max-height: 92vh; max-height: 92dvh; overflow-y: auto; overscroll-behavior: contain; border-radius: 26px 26px 0 0; padding: 20px max(18px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 16px; animation: up .22s ease-out; }
+@media (min-width: 700px) { .sheet-wrap { place-items: center; padding: 16px; } .sheet { border-radius: 26px; } }
+@keyframes up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+.sheet-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.sheet h2 { font-size: 28px; font-weight: 800; }
+.x { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--sunk); font-size: 22px; flex: none; }
+.total { text-align: center; background: var(--sunk); border-radius: 20px; padding: 12px; }
+.total .big { font-size: clamp(50px, 14vw, 76px); }
+.total.out .big { color: var(--berry); }
+.total small { display: block; color: var(--ink-2); font-size: 14px; min-height: 21px; }
+.tray { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: center; }
+.coin { width: 74px; height: 74px; border-radius: 50%; border: 0; font-family: var(--f-display); font-weight: 800; font-size: 21px; color: var(--coin-ink);
+  background: radial-gradient(circle at 35% 30%, var(--silver-a), var(--silver-b) 70%);
+  box-shadow: inset 0 0 0 4px rgba(255,255,255,.35), inset 0 -4px 0 rgba(0,0,0,.12), 0 3px 0 rgba(0,0,0,.15); transition: transform .1s; }
+.coin.gold { background: radial-gradient(circle at 35% 30%, var(--gold-a), var(--gold-b) 72%); }
+.note { width: 104px; height: 60px; border-radius: 10px; border: 0; font-family: var(--f-display); font-weight: 800; font-size: 22px; color: var(--note-ink);
+  box-shadow: inset 0 0 0 3px rgba(255,255,255,.28), 0 3px 0 rgba(0,0,0,.18); transition: transform .1s; }
+.n2 { background: var(--note2); } .n5 { background: var(--note5); } .n10 { background: var(--note10); }
+.coin:active, .note:active { transform: scale(.92) translateY(2px); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: stretch; }
+.row > * { flex: 1 1 160px; min-width: 0; }
+.typed { display: flex; align-items: center; gap: 8px; background: var(--sunk); border-radius: 14px; padding: 6px 12px; }
+.typed label { font-size: 14px; color: var(--ink-2); white-space: nowrap; }
+.typed input, .field input { border: 0; background: transparent; font-family: var(--f-display); font-size: 22px; font-weight: 700; color: var(--ink); width: 100%; min-width: 0; padding: 6px 0; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label, .field .lab { font-size: 14px; color: var(--ink-2); font-weight: 500; }
+.field .box { display: flex; align-items: center; gap: 8px; background: var(--sunk); border-radius: 14px; padding: 4px 12px; }
+.field .box span { color: var(--ink-2); font-weight: 600; white-space: nowrap; }
+.goal-price { display: flex; align-items: center; gap: 2px; padding: 0 4px; }
+.goal-price span, .goal-price input { font-family: var(--f-display); font-size: 26px; font-weight: 800; color: var(--ink); }
+.goal-price input { width: 104px; border: 0; background: transparent; }
+.warn { color: var(--berry); font-weight: 600; }
+.icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 8px; }
+.icons button { height: 54px; border-radius: 14px; border: 2px solid transparent; background: var(--sunk); font-size: 28px; }
+.icons button[aria-pressed="true"] { border-color: var(--jade); background: var(--jade-soft); }
+.gate { display: flex; flex-direction: column; gap: 12px; }
+.small-print { font-size: 13px; color: var(--ink-2); }
+.section-title { font-family: var(--f-display); font-weight: 700; font-size: 19px; }
+.mistakes { display: flex; flex-direction: column; gap: 6px; }
+.mistake { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px; background: var(--sunk); font-size: 14px; font-variant-numeric: tabular-nums; flex-wrap: wrap; }
+.mistake button { border: 0; border-radius: 999px; padding: 8px 14px; font-size: 13px; }
+.rm { background: var(--berry-soft); color: var(--berry); }
+.rm-yes { background: var(--berry); color: var(--surface); }
+.divider { border: 0; border-top: 1px solid var(--line); margin: 0; }
+.linkbox { display: flex; gap: 8px; align-items: center; background: var(--sunk); border-radius: 14px; padding: 8px 8px 8px 12px; }
+.linkbox code { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 13px; color: var(--ink); user-select: all; -webkit-user-select: all; }
+.linkbox button { flex: none; border: 0; border-radius: 999px; padding: 8px 14px; font-size: 13px; background: var(--surface); }
+
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--surface); padding: 12px 20px; border-radius: 999px; font-weight: 500; z-index: 40; box-shadow: var(--shadow); width: max-content; max-width: calc(100% - 32px); text-align: center; }
+#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 30; }
+
+@media (max-width: 820px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px) {
+  .hero { grid-template-columns: minmax(0, 1fr); }
+  .ticket { min-width: 0; }
+  .actions { grid-template-columns: minmax(0, 1fr); }
+  .card { padding: 16px; }
+  .coin { width: 62px; height: 62px; font-size: 19px; }
+  .note { width: 88px; height: 54px; font-size: 20px; }
+  .tray { gap: 10px; }
+  table { font-size: 14px; }
+  td, th { padding-inline: 6px; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<!-- Shown only until the Google Sheet link is set -->
+<main class="app" id="setupView" hidden>
+  <section class="card setup">
+    <p class="eyebrow">Sunday Savings Bank</p>
+    <h1 style="font-size:34px;font-weight:800">Connect the Google Sheet</h1>
+    <p class="lede">The bank keeps its passbook in a Google Sheet, so every phone and iPad sees the same money.</p>
+    <ol>
+      <li>Make a Google Sheet, open <strong>Extensions → Apps Script</strong> and paste in <strong>Code.gs</strong>.</li>
+      <li>Click <strong>Deploy → New deployment → Web app</strong>. Execute as <strong>Me</strong>, access <strong>Anyone</strong>.</li>
+      <li>Copy the Web app URL and paste it below (or put it in <strong>config.js</strong>).</li>
+    </ol>
+    <div class="field">
+      <label for="apiInput">Web app URL</label>
+      <div class="box"><input id="apiInput" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec" style="font-family:var(--f-body);font-size:16px;font-weight:500"></div>
+    </div>
+    <p class="warn" id="apiMsg" hidden></p>
+    <button type="button" class="btn jade sm" id="apiSave">Connect</button>
+  </section>
+</main>
+
+<main class="app" id="appView">
+  <p id="banner" class="banner" role="status" hidden></p>
+
+  <header class="top">
+    <div style="min-width:0">
+      <p class="eyebrow" id="today">Today</p>
+      <h1 id="hello">Hi there!</h1>
+      <p class="sync wait" id="sync"><i></i><span id="syncText">Opening your bank…</span></p>
+    </div>
+    <button id="grownBtn" class="ghost" type="button">For grown-ups</button>
+  </header>
+
+  <section class="card hero" aria-label="My bank">
+    <div style="min-width:0">
+      <p class="label">Money in my bank</p>
+      <p class="big" id="balance">$0.00</p>
+      <p class="sub" id="balSub">Opening your bank…</p>
+    </div>
+    <div class="ticket" aria-live="polite">
+      <p class="t-label">Interest Day</p>
+      <p class="t-date" id="tDate">Sunday</p>
+      <p class="t-sleeps" id="tSleeps">sleeps to go</p>
+      <p class="t-amt" id="tAmt">+$0.00</p>
+      <p class="t-note" id="tNote">coming to your bank</p>
+    </div>
+    <div class="actions">
+      <button id="putIn" class="btn jade" type="button" disabled><span class="sym" aria-hidden="true">+</span> Put money in</button>
+      <button id="takeOut" class="btn berry-o" type="button" disabled><span class="sym" aria-hidden="true">−</span> Take money out</button>
+    </div>
+    <p class="tip" id="tip">Put some money in. When it stays a whole week, the bank pays you interest every Sunday.</p>
+  </section>
+
+  <div class="grid">
+    <section class="card goal" id="goalCard" aria-label="My goal"></section>
+
+    <section class="card chartcard" aria-label="What if I keep saving">
+      <h2>What if I keep saving?</h2>
+      <div class="whatif">
+        <span>I'll put in</span>
+        <span class="stepper">
+          <button type="button" id="wkMinus" aria-label="Save one dollar less each week">−</button>
+          <output id="wkOut" class="num" aria-live="polite">$5</output>
+          <button type="button" id="wkPlus" aria-label="Save one dollar more each week">+</button>
+        </span>
+        <span>every week</span>
+      </div>
+      <div class="chips" role="group" aria-label="How far ahead">
+        <button type="button" class="chip" data-h="8" aria-pressed="false">2 months</button>
+        <button type="button" class="chip" data-h="13" aria-pressed="true">3 months</button>
+        <button type="button" class="chip" data-h="26" aria-pressed="false">6 months</button>
+      </div>
+      <div class="legend" aria-hidden="true">
+        <span><i class="sw-line"></i>My bank so far</span>
+        <span><i class="sw-dash"></i>If I keep saving</span>
+        <span><i class="sw-coins"></i>Just my own money</span>
+        <span><i class="sw-area"></i>Interest (extra money!)</span>
+      </div>
+      <div class="chart-wrap" id="chartWrap">
+        <svg id="chart" role="img" aria-label="Savings chart"></svg>
+        <div class="tooltip" id="tooltip" hidden></div>
+      </div>
+      <p class="chart-sum" id="chartSum"></p>
+    </section>
+  </div>
+
+  <section class="card passbook" aria-label="My passbook">
+    <div class="pb-head">
+      <h2>My passbook</h2>
+      <p class="lede">Every coin in and out, plus Sunday interest.</p>
+    </div>
+    <div class="pb-scroll" id="pbBody"></div>
+  </section>
+</main>
+
+<!-- Money sheet -->
+<div class="sheet-wrap" id="moneyWrap" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="moneyTitle">
+    <div class="sheet-top">
+      <h2 id="moneyTitle">Put money in</h2>
+      <button class="x" type="button" data-close aria-label="Close">×</button>
+    </div>
+    <div class="total" id="totalBox">
+      <p class="big" id="trayTotal">$0.00</p>
+      <small id="trayNote">Tap the coins and notes you have</small>
+    </div>
+    <div class="tray" aria-label="Coins and notes">
+      <button type="button" class="coin" data-c="10" aria-label="10 cents" data-autofocus>10c</button>
+      <button type="button" class="coin" data-c="20" aria-label="20 cents">20c</button>
+      <button type="button" class="coin" data-c="50" aria-label="50 cents">50c</button>
+      <button type="button" class="coin gold" data-c="100" aria-label="1 dollar">$1</button>
+      <button type="button" class="note n2" data-c="200" aria-label="2 dollars">$2</button>
+      <button type="button" class="note n5" data-c="500" aria-label="5 dollars">$5</button>
+      <button type="button" class="note n10" data-c="1000" aria-label="10 dollars">$10</button>
+    </div>
+    <div class="row">
+      <button type="button" class="btn soft sm" id="undoBtn">Undo</button>
+      <button type="button" class="btn soft sm" id="clearBtn">Start again</button>
+    </div>
+    <div class="typed">
+      <label for="typeAmt">Or type it: $</label>
+      <input id="typeAmt" inputmode="decimal" autocomplete="off" placeholder="0.00">
+    </div>
+    <button type="button" class="btn jade" id="confirmMoney" disabled>Put in</button>
+  </div>
+</div>
+
+<!-- Goal sheet -->
+<div class="sheet-wrap" id="goalWrap" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="goalTitle">
+    <div class="sheet-top">
+      <h2 id="goalTitle">What are you saving for?</h2>
+      <button class="x" type="button" data-close aria-label="Close">×</button>
+    </div>
+    <div class="field">
+      <label for="goalLabel">My goal</label>
+      <div class="box"><input id="goalLabel" maxlength="32" placeholder="Roller skates" autocomplete="off" data-autofocus></div>
+    </div>
+    <div class="field">
+      <span class="lab">Pick a picture</span>
+      <div class="icons" id="iconPick"></div>
+    </div>
+    <div class="field">
+      <label for="goalAmt">It costs</label>
+      <span class="stepper" style="align-self:flex-start">
+        <button type="button" id="gMinus" aria-label="Five dollars less">−</button>
+        <span class="goal-price"><span>$</span><input id="goalAmt" inputmode="decimal" value="50"></span>
+        <button type="button" id="gPlus" aria-label="Five dollars more">+</button>
+      </span>
+    </div>
+    <button type="button" class="btn jade" id="saveGoal">Save my goal</button>
+    <button type="button" class="ghost" id="removeGoal" hidden>Remove this goal</button>
+  </div>
+</div>
+
+<!-- Grown-up sheet -->
+<div class="sheet-wrap" id="grownWrap" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="grownTitle">
+    <div class="sheet-top">
+      <h2 id="grownTitle">For grown-ups</h2>
+      <button class="x" type="button" data-close aria-label="Close">×</button>
+    </div>
+    <form class="gate" id="gate">
+      <p>Type the grown-up PIN. It's in the <strong>Settings</strong> tab of the Google Sheet.</p>
+      <div class="field"><div class="box"><input id="gateAns" type="password" inputmode="numeric" autocomplete="off" aria-label="Grown-up PIN" data-autofocus></div></div>
+      <p class="warn" id="gateMsg" hidden></p>
+      <button type="submit" class="btn jade sm" id="gateBtn">Open settings</button>
+    </form>
+    <div id="grownPanel" class="gate" hidden>
+      <p class="section-title">Settings</p>
+      <div class="field"><label for="setName">Child's name</label><div class="box"><input id="setName" maxlength="24" autocomplete="off"></div></div>
+      <div class="row">
+        <div class="field"><label for="setRate">Interest each Sunday</label><div class="box"><input id="setRate" inputmode="decimal"><span>% a week</span></div></div>
+        <div class="field"><label for="setCap">Paid on the first</label><div class="box"><span>$</span><input id="setCap" inputmode="decimal"></div></div>
+      </div>
+      <p class="small-print">Interest is paid at midnight every Sunday on the lowest balance during the week before, up to the limit. A new rate counts from the next Sunday. Past interest stays as it was.</p>
+      <button type="button" class="btn jade sm" id="saveSettings">Save settings</button>
+      <hr class="divider">
+      <p class="section-title">Fix a mistake</p>
+      <p class="small-print">Removing an entry also works out the interest after it again. You can also edit rows straight in the Google Sheet.</p>
+      <div class="mistakes" id="mistakes"></div>
+      <hr class="divider">
+      <p class="section-title">Google Sheet</p>
+      <p class="small-print">The full passbook lives in your Google Drive.</p>
+      <a class="btn soft sm" id="sheetLink" href="#" target="_blank" rel="noopener" style="text-decoration:none">Open the Google Sheet</a>
+      <hr class="divider">
+      <p class="section-title">On a phone or iPad</p>
+      <p class="small-print"><strong>iPhone / iPad:</strong> open this link in Safari, tap Share, then <em>Add to Home Screen</em>.<br><strong>Android:</strong> open it in Chrome, tap ⋮, then <em>Add to Home screen</em> or <em>Install app</em>.</p>
+      <button type="button" class="btn jade sm" id="installBtn" hidden>Install on this phone</button>
+      <div class="linkbox"><code id="shareLink"></code><button type="button" id="copyLink">Copy</button></div>
+    </div>
+  </div>
+</div>
+
+<canvas id="confetti" aria-hidden="true"></canvas>
+<p class="toast" id="toast" role="status" hidden></p>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const DAY = 86400000, SG = 8 * 3600000; // the bank runs on Singapore time on every phone
+  const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const ICONS = ["🧸","🛼","🎨","📚","🎮","🦄","🎁","🐶","🚲","👗","🎧","👜","⭐","🎒"];
+  const DEFAULTS = { kidName: "", rate: 0.02, capCents: 20000 };
+  const reduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+  const okUrl = u => /^https:\/\/script\.google\.com\/.+\/exec\/?$/.test(String(u || "").trim());
+
+  // ---------- where the bank lives ----------
+  let API = "";
+  (() => {
+    const fromConfig = String(window.BANK_API_URL || "").trim();
+    const fromLink = new URLSearchParams(location.search).get("api");
+    if (okUrl(fromConfig)) API = fromConfig;
+    else if (okUrl(fromLink)) { API = fromLink.trim(); lsSet("bankApi", API); }
+    else if (okUrl(lsGet("bankApi"))) API = lsGet("bankApi").trim();
+  })();
+
+  const S = {
+    settings: { ...DEFAULTS }, goal: null, txns: new Map(), interest: new Map(), sheetUrl: "",
+    loaded: false, online: true, syncedAt: 0, busy: 0, pending: new Map(),
+    weekly: 500, horizon: 13, pbLimit: 20, shownBal: 0, pin: "",
+  };
+
+  // ---------- helpers ----------
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  const money = c => (c < 0 ? "−" : "") + "$" + (Math.abs(c) / 100).toLocaleString("en-SG", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const moneyShort = c => "$" + Math.round(c / 100).toLocaleString("en-SG");
+  const sg = ms => new Date(ms + SG);
+  const sod = ms => Math.floor((ms + SG) / DAY) * DAY - SG;
+  const addDays = (ms, n) => ms + n * DAY;
+  const dow = ms => sg(ms).getUTCDay();
+  const nextSundayAfter = ms => { const s = sod(ms); let add = (7 - dow(s)) % 7; if (add === 0) add = 7; return s + add * DAY; };
+  const pad = n => String(n).padStart(2, "0");
+  const key = ms => { const d = sg(ms); return d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate()); };
+  const shortDate = ms => { const d = sg(ms); return DAYS[d.getUTCDay()].slice(0, 3) + " " + d.getUTCDate() + " " + MONTHS[d.getUTCMonth()].slice(0, 3); };
+  const dayMonth = ms => { const d = sg(ms); return d.getUTCDate() + " " + MONTHS[d.getUTCMonth()].slice(0, 3); };
+  const toCents = str => { const v = parseFloat(String(str).replace(/[^0-9.]/g, "")); return isFinite(v) ? Math.round(v * 100) : 0; };
+  const capOf = () => Math.max(0, Math.round(S.settings.capCents ?? DEFAULTS.capCents));
+  const rateOf = () => Math.max(0, Math.min(1, Number(S.settings.rate ?? DEFAULTS.rate)));
+  const pct = r => (Math.round(r * 1000) / 10).toString() + "%";
+  const interestOn = (basis, rate = rateOf()) => Math.round(rate * Math.min(Math.max(basis, 0), capOf()));
+  const newId = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)).replace(/-/g, "");
+
+  // ---------- the bank's rules (the Google Sheet pays the real interest; this mirrors it) ----------
+  function ledger(now = Date.now()) {
+    const all = new Map([...S.txns, ...S.pending]);
+    const ev = [...all.entries()]
+      .map(([id, t]) => ({ id, kind: t.kind, amount: Math.round(t.amount) || 0, at: Number(t.at) || 0 }))
+      .filter(t => t.amount > 0 && (t.kind === "in" || t.kind === "out"))
+      .sort((a, b) => a.at - b.at);
+    const out = { bal: 0, principal: 0, interestTotal: 0, rows: [], sundays: [], pending: 0, lowest: 0, nextSunday: nextSundayAfter(now), paidToday: 0, count: ev.length };
+    if (!ev.length) return out;
+    let bal = 0, prin = 0, min = 0, i = 0, Sun = nextSundayAfter(ev[0].at);
+    const apply = t => {
+      const s = t.kind === "in" ? t.amount : -t.amount;
+      bal += s; prin += s; min = Math.min(min, bal);
+      out.rows.push({ id: t.id, kind: t.kind, at: t.at, amount: s, bal });
+    };
+    while (Sun <= now) {
+      while (i < ev.length && ev[i].at < Sun) apply(ev[i++]);
+      const paid = S.interest.get(key(Sun));
+      const basis = paid ? (Number(paid.basis) || 0) : Math.min(Math.max(min, 0), capOf());
+      const rate = paid && Number.isFinite(Number(paid.rate)) ? Number(paid.rate) : rateOf();
+      const amt = paid ? Math.round(paid.amount) : interestOn(min);
+      if (amt > 0) {
+        bal += amt; out.interestTotal += amt;
+        out.rows.push({ kind: "interest", at: Sun, amount: amt, bal, basis, rate });
+        if (Sun === sod(now)) out.paidToday = amt;
+      }
+      out.sundays.push({ t: Sun, total: bal, coins: prin });
+      min = bal; Sun = addDays(Sun, 7);
+    }
+    while (i < ev.length) apply(ev[i++]);
+    out.bal = bal; out.principal = prin; out.lowest = Math.max(min, 0);
+    out.pending = interestOn(min); out.nextSunday = Sun;
+    return out;
+  }
+
+  function project(L, weekly, weeks) {
+    const pts = [];
+    let P = L.bal + L.pending, C = L.principal;
+    pts.push({ t: L.nextSunday, total: P, coins: C });
+    for (let k = 2; k <= weeks; k++) {
+      P = P + interestOn(P) + weekly; C = C + weekly;
+      pts.push({ t: addDays(L.nextSunday, 7 * (k - 1)), total: P, coins: C });
+    }
+    return pts;
+  }
+
+  // ---------- talking to the Google Sheet ----------
+  async function call(action, payload = {}) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 25000);
+    let res;
+    try {
+      res = action === "state"
+        ? await fetch(API + (API.includes("?") ? "&" : "?") + "action=state&t=" + Date.now(), { signal: ctrl.signal, cache: "no-store", redirect: "follow" })
+        : await fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action, ...payload }), signal: ctrl.signal, redirect: "follow" });
+    } catch (e) {
+      setOnline(false); const err = new Error("offline"); err.offline = true; throw err;
+    } finally { clearTimeout(timer); }
+    let j;
+    try { j = await res.json(); } catch (e) { setOnline(false); const err = new Error("bad"); err.offline = true; throw err; }
+    setOnline(true);
+    if (j.state) applyState(j.state);
+    if (!j.ok) { const err = new Error(j.error || "The bank said no."); err.server = true; throw err; }
+    return j;
+  }
+  function applyState(st) {
+    S.settings = { ...DEFAULTS, ...(st.settings || {}) };
+    S.goal = st.goal && st.goal.cents > 0 ? st.goal : null;
+    S.txns = new Map((st.txns || []).map(t => [t.id, t]));
+    for (const id of [...S.pending.keys()]) if (S.txns.has(id)) S.pending.delete(id);
+    S.interest = new Map((st.interest || []).map(r => [r.key, r]));
+    S.sheetUrl = st.sheetUrl || "";
+    S.loaded = true; S.syncedAt = Date.now();
+    lsSet("bankCache", JSON.stringify({ api: API, st }));
+    render();
+  }
+  function setOnline(v) { S.online = v; renderSync(); }
+  function failMsg(e) {
+    if (e && e.server) return e.message;
+    return "Couldn't reach the bank. Check the internet and try again.";
+  }
+  async function refresh() {
+    if (!API || S.busy || document.hidden) return;
+    try { await call("state"); }
+    catch (e) {
+      if (!S.loaded) showLoadError();
+    }
+  }
+  function showLoadError() {
+    $("pbBody").innerHTML = `<div class="empty"><strong>Can't open the bank right now</strong><span>Check the internet, then try again.</span><button type="button" class="btn jade sm" id="retryBtn" style="padding-inline:22px">Try again</button><span class="small-print">Grown-ups: if this keeps happening, check the Apps Script deployment is set to <em>Anyone</em>.</span></div>`;
+    $("retryBtn").onclick = () => { $("pbBody").innerHTML = `<div class="empty"><strong>Opening your passbook…</strong></div>`; refresh(); };
+  }
+
+  // ---------- render ----------
+  function renderSync() {
+    const el = $("sync"), t = $("syncText");
+    if (!S.online) { el.className = "sync off"; t.textContent = S.loaded ? "No internet. Showing what was saved last." : "No internet"; }
+    else if (S.busy) { el.className = "sync wait"; t.textContent = "Saving to the Google Sheet…"; }
+    else if (!S.loaded) { el.className = "sync wait"; t.textContent = "Opening your bank…"; }
+    else { el.className = "sync"; t.textContent = "Saved in the Google Sheet"; }
+  }
+  function render() {
+    const now = Date.now();
+    const L = ledger(now);
+    const name = (S.settings.kidName || "").trim();
+    const d = sg(now);
+    $("today").textContent = DAYS[d.getUTCDay()] + " " + d.getUTCDate() + " " + MONTHS[d.getUTCMonth()];
+    $("hello").textContent = name ? "Hi, " + name + "!" : "Hi there!";
+    document.title = name ? name + "'s Savings Bank" : "Sunday Savings Bank";
+    renderSync();
+
+    animateBalance(L.bal);
+    $("balSub").textContent = !S.loaded ? "Opening your bank…" :
+      "My own money " + money(L.principal) + "  ·  Interest earned " + money(L.interestTotal);
+
+    const sleeps = Math.round((L.nextSunday - sod(now)) / DAY);
+    const ns = sg(L.nextSunday);
+    $("tDate").textContent = "Sunday " + ns.getUTCDate() + " " + MONTHS[ns.getUTCMonth()].slice(0, 3);
+    $("tSleeps").textContent = sleeps + (sleeps === 1 ? " sleep to go" : " sleeps to go");
+    $("tAmt").textContent = "+" + money(L.pending);
+    $("tNote").textContent = L.pending > 0 ? "coming to your bank" : "money must stay a whole week";
+
+    const cap = capOf();
+    let tip;
+    if (!L.count) tip = "Put some money in. When it stays a whole week, the bank pays you interest every Sunday.";
+    else if (L.paidToday) tip = "It's Interest Day! The bank added " + money(L.paidToday) + " to your money this morning.";
+    else if (L.bal > cap) tip = "Only your first " + moneyShort(cap) + " earns interest. You have more than that. Wow!";
+    else if (L.pending === 0) tip = "Money you put in this week starts earning next week. Keep it in!";
+    else tip = "The lowest amount in your bank this week is " + money(L.lowest) + ". On Sunday you get " + pct(rateOf()) + " of that.";
+    $("tip").textContent = tip;
+
+    const locked = !S.loaded || !S.online;
+    $("putIn").disabled = locked;
+    $("takeOut").disabled = locked || L.bal <= 0;
+
+    renderGoal(L);
+    renderChart(L);
+    renderPassbook(L);
+    if (!$("grownPanel").hidden) renderMistakes(L);
+  }
+
+  function animateBalance(target) {
+    const el = $("balance");
+    if (reduceMotion || S.shownBal === target) { S.shownBal = target; el.textContent = money(target); return; }
+    const from = S.shownBal, t0 = performance.now(), dur = 700;
+    S.shownBal = target;
+    const step = t => {
+      if (S.shownBal !== target) return;
+      const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = money(Math.round(from + (target - from) * e));
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  function goalReach(L) {
+    if (!S.goal || !(S.goal.cents > 0)) return null;
+    if (L.bal >= S.goal.cents) return { done: true };
+    const pts = project(L, S.weekly, 104);
+    const hit = pts.findIndex(p => p.total >= S.goal.cents);
+    return hit === -1 ? { never: true } : { t: pts[hit].t, weeks: hit + 1 };
+  }
+
+  function renderGoal(L) {
+    const card = $("goalCard");
+    const g = S.goal;
+    if (!g) {
+      card.innerHTML = `<div class="goal-empty">
+          <div class="goal-icon" aria-hidden="true">🎯</div>
+          <h2>What are you saving for?</h2>
+          <p class="lede">Pick something you'd love. Then watch your bank grow toward it.</p>
+          <button type="button" class="btn jade" id="setGoalBtn" style="width:100%">Pick my goal</button>
+        </div>`;
+    } else {
+      const have = Math.max(0, L.bal), fill = Math.min(100, Math.round(have / g.cents * 100));
+      const left = Math.max(0, g.cents - have);
+      const R = goalReach(L);
+      let when;
+      if (R.done) when = "You did it! You have enough for your " + esc(g.label || "goal") + ". 🎉";
+      else if (R.never) when = S.weekly === 0 ? "Try saving a little every week to get there." : "That's a big goal! Saving a bit more each week will get you there sooner.";
+      else when = (S.weekly > 0 ? "Saving " + moneyShort(S.weekly) + " a week, you" : "With just interest, you") +
+        " could get there by <strong>" + shortDate(R.t) + "</strong>. That's " + R.weeks + (R.weeks === 1 ? " week" : " weeks") + " away.";
+      card.innerHTML = `
+        <div class="goal-head">
+          <div class="goal-icon" aria-hidden="true">${esc(g.icon || "🎯")}</div>
+          <div style="min-width:0">
+            <p class="goal-kicker">I'm saving for</p>
+            <p class="goal-name">${esc(g.label || "My goal")}</p>
+          </div>
+        </div>
+        <div class="jar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${fill}" aria-label="Goal progress"><div class="jar-fill" style="width:${fill}%"></div></div>
+        <div class="goal-nums num">
+          <span><strong>${money(have)}</strong> of ${money(g.cents)}</span>
+          <span>${left > 0 ? "<strong>" + money(left) + "</strong> to go" : "<strong>Reached!</strong>"}</span>
+        </div>
+        <p class="goal-when">${when}</p>
+        <button type="button" class="ghost" id="setGoalBtn">Change my goal</button>`;
+    }
+    const b = $("setGoalBtn");
+    if (b) { b.disabled = !S.loaded || !S.online; b.onclick = openGoal; }
+  }
+
+  // ---------- chart ----------
+  let chartPts = [], chartGeo = null;
+  function niceMax(v) {
+    if (v <= 0) return { max: 2000, step: 500 };
+    const raw = v / 4, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw);
+    return { max: step * 4, step };
+  }
+  function renderChart(L) {
+    const wrap = $("chartWrap"), svg = $("chart");
+    const W = Math.max(280, wrap.clientWidth || 600), H = W < 520 ? 240 : 290;
+    const pad = { l: 46, r: 58, t: 18, b: 30 };
+    const now = Date.now();
+    const past = L.sundays.slice(-6).map(p => ({ ...p, kind: "past" }));
+    const nowPt = { t: now, total: L.bal, coins: L.principal, kind: "now" };
+    const fut = project(L, S.weekly, S.horizon).map(p => ({ ...p, kind: "future" }));
+    const pts = [...past, nowPt, ...fut];
+    chartPts = pts;
+    const goal = S.goal ? S.goal.cents : 0;
+    const top = Math.max(...pts.map(p => p.total), goal) * 1.06;
+    const { max: yMax, step: yStep } = niceMax(top);
+    const t0 = pts[0].t, t1 = pts[pts.length - 1].t;
+    const x = t => pad.l + (t1 === t0 ? 0 : (t - t0) / (t1 - t0)) * (W - pad.l - pad.r);
+    const y = v => pad.t + (1 - v / yMax) * (H - pad.t - pad.b);
+    chartGeo = { x, y, W, H, pad };
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    let g = "";
+    for (let v = 0; v <= yMax + 1; v += yStep) {
+      g += `<line class="grid-line" x1="${pad.l}" x2="${W - pad.r}" y1="${y(v)}" y2="${y(v)}"/>`;
+      g += `<text class="axis-text" x="${pad.l - 8}" y="${y(v) + 4}" text-anchor="end">${moneyShort(v)}</text>`;
+    }
+    const sundays = pts.filter(p => p.kind !== "now");
+    const every = Math.max(1, Math.ceil(sundays.length / Math.max(2, Math.floor((W - pad.l - pad.r) / 64))));
+    sundays.forEach((p, i) => {
+      if (i % every) return;
+      g += `<text class="axis-text" x="${x(p.t)}" y="${H - 8}" text-anchor="middle">${dayMonth(p.t)}</text>`;
+    });
+    const area = pts.map(p => `${x(p.t)},${y(p.total)}`).join(" ") + " " + pts.slice().reverse().map(p => `${x(p.t)},${y(p.coins)}`).join(" ");
+    g += `<polygon class="a-int" points="${area}"/>`;
+    g += `<polyline class="l-coins" points="${pts.map(p => `${x(p.t)},${y(p.coins)}`).join(" ")}"/>`;
+    const actual = [...past, nowPt];
+    if (actual.length > 1) g += `<polyline class="l-total" points="${actual.map(p => `${x(p.t)},${y(p.total)}`).join(" ")}"/>`;
+    g += `<polyline class="l-proj" points="${[nowPt, ...fut].map(p => `${x(p.t)},${y(p.total)}`).join(" ")}"/>`;
+    g += `<line class="today-line" x1="${x(now)}" x2="${x(now)}" y1="${pad.t}" y2="${H - pad.b}"/>`;
+    g += `<text class="today-text" x="${x(now) + 4}" y="${pad.t + 10}">Today</text>`;
+    let hitPt = null;
+    if (goal) {
+      const gy = y(goal);
+      g += `<line class="l-goal" x1="${pad.l}" x2="${W - pad.r}" y1="${gy}" y2="${gy}"/>`;
+      const label = "Goal " + moneyShort(goal);
+      const tw = label.length * 7 + 14;
+      g += `<rect class="goal-tag" x="${W - pad.r - tw}" y="${gy - 22}" width="${tw}" height="18" rx="9"/>`;
+      g += `<text class="goal-tag-text" x="${W - pad.r - tw / 2}" y="${gy - 9}" text-anchor="middle">${label}</text>`;
+      if (L.bal < goal) hitPt = fut.find(p => p.total >= goal) || null;
+    }
+    g += `<circle class="dot" cx="${x(now)}" cy="${y(L.bal)}" r="6"/>`;
+    if (hitPt) g += `<circle class="dot-goal" cx="${x(hitPt.t)}" cy="${y(hitPt.total)}" r="8"/>`;
+    const last = pts[pts.length - 1];
+    g += `<circle class="dot" cx="${x(last.t)}" cy="${y(last.total)}" r="5"/>`;
+    g += `<text class="end-text" x="${x(last.t) + 9}" y="${y(last.total) + 4}">${moneyShort(last.total)}</text>`;
+    g += `<g id="hoverG"></g>`;
+    svg.innerHTML = g;
+    svg.setAttribute("aria-label", `Savings chart. Today ${money(L.bal)}. By ${shortDate(last.t)} you could have ${money(last.total)}.`);
+    const earned = last.total - last.coins;
+    $("chartSum").innerHTML = `By <strong>${shortDate(last.t)}</strong> you could have <strong class="num">${money(last.total)}</strong>. ` +
+      (earned > 0 ? `Interest gives you <strong class="num">${money(earned)}</strong> of that!` : `Keep money in to start earning interest.`);
+  }
+  function hoverAt(clientX) {
+    if (!chartGeo || !chartPts.length) return;
+    const svg = $("chart"), rect = svg.getBoundingClientRect();
+    if (!rect.width) return;
+    const sx = (clientX - rect.left) * (chartGeo.W / rect.width);
+    let best = chartPts[0], bd = Infinity;
+    for (const p of chartPts) { const dd = Math.abs(chartGeo.x(p.t) - sx); if (dd < bd) { bd = dd; best = p; } }
+    const px = chartGeo.x(best.t), py = chartGeo.y(best.total);
+    $("hoverG").innerHTML = `<line class="hover-line" x1="${px}" x2="${px}" y1="${chartGeo.pad.t}" y2="${chartGeo.H - chartGeo.pad.b}"/><circle class="dot" cx="${px}" cy="${py}" r="7"/>`;
+    const tip = $("tooltip");
+    const title = best.kind === "now" ? "Today" : shortDate(best.t) + (best.kind === "future" ? " (if you keep saving)" : "");
+    const extra = Math.max(0, best.total - best.coins);
+    tip.innerHTML = `${esc(title)}<br><b class="num">${money(best.total)}</b><br><span class="num">Your money ${money(best.coins)} · Interest ${money(extra)}</span>`;
+    tip.hidden = false;
+    const scale = rect.width / chartGeo.W, left = px * scale, half = tip.offsetWidth / 2;
+    tip.style.left = Math.min(rect.width - half, Math.max(half, left)) + "px";
+    tip.style.top = Math.max(0, py * scale - tip.offsetHeight - 14) + "px";
+  }
+  function hoverOff() { const h = $("hoverG"); if (h) h.innerHTML = ""; $("tooltip").hidden = true; }
+
+  // ---------- passbook ----------
+  function renderPassbook(L) {
+    const box = $("pbBody");
+    if (!S.loaded) { if (!box.querySelector("#retryBtn")) box.innerHTML = `<div class="empty"><strong>Opening your passbook…</strong></div>`; return; }
+    if (!L.rows.length) {
+      box.innerHTML = `<div class="empty"><strong>Your passbook is empty</strong><span>Tap "Put money in" to add your first coins. Each one will be written here.</span></div>`;
+      return;
+    }
+    const rows = L.rows.slice().reverse();
+    const shown = rows.slice(0, S.pbLimit);
+    let h = `<table><thead><tr><th>Date</th><th>What</th><th class="r">Amount</th><th class="r">In my bank</th></tr></thead><tbody>`;
+    for (const r of shown) {
+      const what = r.kind === "interest" ? `<span class="what"><span class="stamp">Interest</span>${pct(r.rate)} on ${money(r.basis || 0)}</span>`
+        : r.kind === "in" ? "Put in" : "Took out";
+      h += `<tr><td>${shortDate(r.at)}</td><td>${what}</td><td class="r ${r.amount >= 0 ? "plus" : "minus"}">${r.amount >= 0 ? "+" : "−"}${money(Math.abs(r.amount))}</td><td class="r">${money(r.bal)}</td></tr>`;
+    }
+    h += `</tbody></table>`;
+    if (rows.length > shown.length) h += `<div style="text-align:center;margin-top:12px"><button type="button" class="ghost" id="pbMore">Show older entries</button></div>`;
+    box.innerHTML = h;
+    const m = $("pbMore"); if (m) m.onclick = () => { S.pbLimit += 30; render(); };
+  }
+
+  // ---------- money sheet ----------
+  let mode = "in", tray = [];
+  function trayTotal() { const t = $("typeAmt").value.trim(); return t ? toCents(t) : tray.reduce((a, b) => a + b, 0); }
+  function openMoney(m) {
+    mode = m; tray = []; $("typeAmt").value = "";
+    $("moneyTitle").textContent = m === "in" ? "Put money in" : "Take money out";
+    $("totalBox").classList.toggle("out", m === "out");
+    $("confirmMoney").className = "btn " + (m === "in" ? "jade" : "berry-o");
+    updateTray();
+    openSheet("moneyWrap");
+  }
+  function updateTray() {
+    const t = trayTotal(), L = ledger(), btn = $("confirmMoney"), note = $("trayNote");
+    $("trayTotal").textContent = money(t);
+    let ok = t > 0 && t <= 100000, msg = mode === "in" ? "Tap the coins and notes you have" : "Tap the coins and notes you want";
+    const tooMuch = mode === "out" && t > L.bal;
+    if (t > 100000) msg = "That's a lot! Ask a grown-up to help.";
+    if (tooMuch) { ok = false; msg = "You only have " + money(L.bal) + " in your bank"; }
+    note.textContent = msg; note.className = tooMuch || t > 100000 ? "warn" : "";
+    btn.disabled = !ok;
+    btn.textContent = t > 0 ? (mode === "in" ? "Put " + money(t) + " in my bank" : "Take " + money(t) + " out") : (mode === "in" ? "Put in" : "Take out");
+  }
+  async function confirmMoney() {
+    const t = trayTotal(); if (t <= 0) return;
+    const before = ledger();
+    if (mode === "out" && t > before.bal) return;
+    const kind = mode, id = newId();
+    // Show it straight away, then save to the Google Sheet.
+    S.pending.set(id, { kind, amount: t, at: Date.now() });
+    closeSheet("moneyWrap");
+    render();
+    const after = before.bal + (kind === "in" ? t : -t);
+    if (kind === "in") {
+      const g = S.goal && S.goal.cents;
+      if (g && before.bal < g && after >= g) { confetti(220); toast("You reached your goal! Amazing saving!"); }
+      else { confetti(90); toast("Added " + money(t) + " to your bank"); }
+    } else toast("Took " + money(t) + " out. Spend it wisely!");
+    S.busy++; renderSync();
+    try { await call("add", { id, kind, amount: t }); }
+    catch (e) { S.pending.delete(id); render(); toast(e.server ? e.message : "That didn't save. Check the internet and try again."); }
+    finally { S.busy--; S.pending.delete(id); render(); }
+  }
+
+  // ---------- goal sheet ----------
+  let pickedIcon = ICONS[0];
+  function openGoal() {
+    const g = S.goal;
+    $("goalLabel").value = g && g.label ? g.label : "";
+    $("goalAmt").value = g && g.cents ? String(g.cents / 100) : "50";
+    pickedIcon = g && g.icon ? g.icon : ICONS[0];
+    const list = ICONS.includes(pickedIcon) ? ICONS : [pickedIcon, ...ICONS];
+    $("iconPick").innerHTML = list.map(i => `<button type="button" data-i="${esc(i)}" aria-pressed="${i === pickedIcon}" aria-label="Picture ${esc(i)}">${esc(i)}</button>`).join("");
+    $("removeGoal").hidden = !g;
+    openSheet("goalWrap");
+  }
+  async function saveGoal() {
+    const cents = toCents($("goalAmt").value);
+    if (cents <= 0) { toast("How much does it cost? Type a number."); return; }
+    const btn = $("saveGoal"); btn.disabled = true;
+    S.busy++; renderSync();
+    try {
+      await call("goal", { label: $("goalLabel").value.trim().slice(0, 32) || "My goal", icon: pickedIcon, cents: Math.min(cents, 10000000) });
+      closeSheet("goalWrap"); toast("Goal saved. You can do it!");
+    } catch (e) { toast(failMsg(e)); }
+    finally { S.busy--; btn.disabled = false; render(); }
+  }
+  async function removeGoal() {
+    S.busy++; renderSync();
+    try { await call("goal", { clear: true }); closeSheet("goalWrap"); }
+    catch (e) { toast(failMsg(e)); }
+    finally { S.busy--; render(); }
+  }
+
+  // ---------- grown-ups ----------
+  function openGrown() {
+    $("gateAns").value = ""; $("gateMsg").hidden = true;
+    if (S.pin) { $("gate").hidden = true; showPanel(); }
+    else { $("gate").hidden = false; $("grownPanel").hidden = true; }
+    openSheet("grownWrap");
+  }
+  async function submitGate(e) {
+    e.preventDefault();
+    const pin = $("gateAns").value.trim();
+    if (!pin) return;
+    const btn = $("gateBtn"); btn.disabled = true; btn.textContent = "Checking…";
+    try { await call("checkPin", { pin }); S.pin = pin; $("gate").hidden = true; showPanel(); }
+    catch (err) { $("gateMsg").textContent = failMsg(err); $("gateMsg").hidden = false; $("gateAns").select(); }
+    finally { btn.disabled = false; btn.textContent = "Open settings"; }
+  }
+  function showPanel() {
+    $("grownPanel").hidden = false;
+    $("setName").value = S.settings.kidName || "";
+    $("setRate").value = String(Math.round(rateOf() * 1000) / 10);
+    $("setCap").value = String(capOf() / 100);
+    const sl = $("sheetLink");
+    sl.hidden = !S.sheetUrl; if (S.sheetUrl) sl.href = S.sheetUrl;
+    $("shareLink").textContent = location.origin + location.pathname;
+    $("installBtn").hidden = !installEvt;
+    renderMistakes(ledger());
+  }
+  async function saveSettings() {
+    const rate = parseFloat($("setRate").value), cap = parseFloat(String($("setCap").value).replace(/[^0-9.]/g, ""));
+    if (!(rate >= 0 && rate <= 100)) { toast("Use a rate between 0 and 100%."); return; }
+    if (!(cap >= 0)) { toast("Type the limit in dollars."); return; }
+    const btn = $("saveSettings"); btn.disabled = true;
+    S.busy++; renderSync();
+    try { await call("settings", { pin: S.pin, kidName: $("setName").value.trim().slice(0, 24), ratePct: rate, capDollars: cap }); toast("Settings saved"); }
+    catch (e) { if (e.server && /PIN/.test(e.message)) lockPanel(e.message); else toast(failMsg(e)); }
+    finally { S.busy--; btn.disabled = false; render(); }
+  }
+  function lockPanel(msg) {
+    S.pin = ""; $("grownPanel").hidden = true; $("gate").hidden = false;
+    $("gateMsg").textContent = msg; $("gateMsg").hidden = false;
+  }
+  let armed = null;
+  function renderMistakes(L) {
+    const list = L.rows.filter(r => r.kind !== "interest" && S.txns.has(r.id)).slice(-12).reverse();
+    const box = $("mistakes");
+    if (!list.length) { box.innerHTML = `<p class="small-print">Nothing to fix yet.</p>`; return; }
+    box.innerHTML = list.map(r => `<div class="mistake"><span>${shortDate(r.at)} · ${r.kind === "in" ? "Put in" : "Took out"} ${money(Math.abs(r.amount))}</span>
+      ${armed === r.id ? `<span><button type="button" class="rm-yes" data-rm="${esc(r.id)}">Remove</button> <button type="button" class="soft" data-keep>Keep</button></span>`
+                      : `<button type="button" class="rm" data-arm="${esc(r.id)}">Remove…</button>`}</div>`).join("");
+  }
+  async function removeTxn(id) {
+    S.busy++; renderSync();
+    try { await call("remove", { pin: S.pin, id }); toast("Removed. Interest after it has been worked out again."); }
+    catch (e) { if (e.server && /PIN/.test(e.message)) lockPanel(e.message); else toast(failMsg(e)); }
+    finally { S.busy--; armed = null; render(); }
+  }
+
+  // ---------- install ----------
+  let installEvt = null;
+  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; if (!$("grownPanel").hidden) $("installBtn").hidden = false; });
+  $("installBtn").onclick = async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) {} installEvt = null; $("installBtn").hidden = true; };
+  $("copyLink").onclick = async () => {
+    const text = $("shareLink").textContent;
+    try { await navigator.clipboard.writeText(text); toast("Link copied"); }
+    catch (e) { const r = document.createRange(); r.selectNodeContents($("shareLink")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Link selected. Copy it from here."); }
+  };
+
+  // ---------- sheets / ui ----------
+  let lastFocus = null;
+  function openSheet(id) {
+    lastFocus = document.activeElement; const w = $(id); w.hidden = false;
+    document.body.style.overflow = "hidden";
+    const f = w.querySelector("[data-autofocus]") || w.querySelector(".x");
+    // Avoid popping the keyboard open on phones; only focus inputs on wide screens.
+    setTimeout(() => { if (f && (f.tagName !== "INPUT" || matchMedia("(min-width: 900px)").matches)) f.focus({ preventScroll: true }); }, 60);
+  }
+  function closeSheet(id) {
+    $(id).hidden = true; armed = null;
+    if (!document.querySelector(".sheet-wrap:not([hidden])")) document.body.style.overflow = "";
+    if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+  }
+  function banner(t) { const b = $("banner"); b.textContent = t; b.hidden = !t; }
+  let toastT;
+  function toast(t) { const el = $("toast"); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 3000); }
+
+  function confetti(n) {
+    if (reduceMotion) return;
+    const c = $("confetti"), ctx = c.getContext("2d"), dpr = window.devicePixelRatio || 1;
+    c.width = innerWidth * dpr; c.height = innerHeight * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const cs = getComputedStyle(document.documentElement);
+    const cols = ["--gold", "--jade", "--berry", "--note2", "--gold-b"].map(v => cs.getPropertyValue(v).trim() || "#E3A229");
+    const ps = Array.from({ length: n }, () => ({
+      x: innerWidth / 2 + (Math.random() - .5) * 160, y: innerHeight * .38,
+      vx: (Math.random() - .5) * 14, vy: -Math.random() * 15 - 5, r: Math.random() * Math.PI,
+      vr: (Math.random() - .5) * .4, s: 6 + Math.random() * 7, c: cols[Math.floor(Math.random() * cols.length)], round: Math.random() < .4,
+    }));
+    const t0 = performance.now();
+    const tick = t => {
+      ctx.clearRect(0, 0, innerWidth, innerHeight);
+      for (const p of ps) {
+        p.vy += .45; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c;
+        if (p.round) { ctx.beginPath(); ctx.arc(0, 0, p.s / 2, 0, Math.PI * 2); ctx.fill(); } else ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2);
+        ctx.restore();
+      }
+      if (t - t0 < 2600) requestAnimationFrame(tick); else ctx.clearRect(0, 0, innerWidth, innerHeight);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  // ---------- events ----------
+  $("putIn").onclick = () => openMoney("in");
+  $("takeOut").onclick = () => openMoney("out");
+  document.querySelectorAll(".tray [data-c]").forEach(b => b.onclick = () => { $("typeAmt").value = ""; tray.push(+b.dataset.c); updateTray(); });
+  $("undoBtn").onclick = () => { if ($("typeAmt").value) $("typeAmt").value = ""; else tray.pop(); updateTray(); };
+  $("clearBtn").onclick = () => { tray = []; $("typeAmt").value = ""; updateTray(); };
+  $("typeAmt").oninput = () => { tray = []; updateTray(); };
+  $("confirmMoney").onclick = confirmMoney;
+  $("wkMinus").onclick = () => { S.weekly = Math.max(0, S.weekly - 100); $("wkOut").textContent = moneyShort(S.weekly); render(); };
+  $("wkPlus").onclick = () => { S.weekly = Math.min(5000, S.weekly + 100); $("wkOut").textContent = moneyShort(S.weekly); render(); };
+  document.querySelectorAll(".chip[data-h]").forEach(c => c.onclick = () => {
+    S.horizon = +c.dataset.h; document.querySelectorAll(".chip[data-h]").forEach(x => x.setAttribute("aria-pressed", String(x === c))); render();
+  });
+  $("iconPick").onclick = e => { const b = e.target.closest("[data-i]"); if (!b) return; pickedIcon = b.dataset.i; $("iconPick").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); };
+  $("gMinus").onclick = () => { $("goalAmt").value = String(Math.max(5, Math.round((toCents($("goalAmt").value) / 100 - 5) / 5) * 5)); };
+  $("gPlus").onclick = () => { $("goalAmt").value = String(Math.round((toCents($("goalAmt").value) / 100 + 5) / 5) * 5); };
+  $("saveGoal").onclick = saveGoal;
+  $("removeGoal").onclick = removeGoal;
+  $("grownBtn").onclick = openGrown;
+  $("gate").onsubmit = submitGate;
+  $("saveSettings").onclick = saveSettings;
+  $("mistakes").onclick = e => {
+    const a = e.target.closest("[data-arm]"), y = e.target.closest("[data-rm]"), k = e.target.closest("[data-keep]");
+    if (a) { armed = a.dataset.arm; renderMistakes(ledger()); }
+    else if (k) { armed = null; renderMistakes(ledger()); }
+    else if (y) removeTxn(y.dataset.rm);
+  };
+  document.querySelectorAll(".sheet-wrap").forEach(w => {
+    w.addEventListener("click", e => { if (e.target === w || e.target.closest("[data-close]")) closeSheet(w.id); });
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") document.querySelectorAll(".sheet-wrap:not([hidden])").forEach(w => closeSheet(w.id)); });
+  const cw = $("chartWrap");
+  cw.addEventListener("pointermove", e => hoverAt(e.clientX));
+  cw.addEventListener("pointerdown", e => hoverAt(e.clientX));
+  cw.addEventListener("pointerleave", hoverOff);
+  let rz; new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(() => { hoverOff(); renderChart(ledger()); }, 80); }).observe(cw);
+  window.addEventListener("online", refresh);
+  window.addEventListener("offline", () => setOnline(false));
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { render(); refresh(); } });
+  setInterval(refresh, 30000);
+  setInterval(() => { if (!document.hidden) render(); }, 60000);
+
+  // ---------- setup screen ----------
+  $("apiSave").onclick = () => {
+    const u = $("apiInput").value.trim();
+    if (!okUrl(u)) { $("apiMsg").textContent = "That doesn't look like a web app link. It starts with https://script.google.com/ and ends with /exec."; $("apiMsg").hidden = false; return; }
+    lsSet("bankApi", u); location.reload();
+  };
+
+  // ---------- start ----------
+  if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+  if (!API) { $("appView").hidden = true; $("setupView").hidden = false; return; }
+  try {
+    const c = JSON.parse(lsGet("bankCache") || "null");
+    if (c && c.api === API && c.st) { applyState(c.st); S.syncedAt = 0; }
+  } catch (e) {}
+  render();
+  refresh();
+})();
+</script>
+</body>
+</html>
